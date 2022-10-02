@@ -5,7 +5,7 @@ import requests
 import json
 import base64
 import secret
-
+import urllib.parse
 import cv2
 import numpy as np
 
@@ -123,6 +123,8 @@ class MyServer(BaseHTTPRequestHandler):
         if('favicon' not in self.path):
             resultImages.clear()
             text = self.path.split("?")[1]
+            text = urllib.parse.unquote(text)
+            text = text.split("=")[1]
             #Send query to classification api
             print("Query: " + text)
             output = query({
@@ -134,7 +136,7 @@ class MyServer(BaseHTTPRequestHandler):
                 group = entity.get("entity_group")
                 if ((group == "PROPN") or group == "NOUN"):
                     print(entity.get("entity_group"))
-                    getNasaImages(entity.get("word"), text)
+                    getNasaImages(urllib.parse.unquote(entity.get("word")), text)
 
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
