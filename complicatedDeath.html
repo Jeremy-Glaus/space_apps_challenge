@@ -1,44 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <title>THE ART IN OUR WORLDS</title>
   <link rel="stylesheet" href="styleOfDeath.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    </head>
+</head>
+
 <body>
 
-<div class="wrap">
-  <div class="search">
-    <input id="input" type="text" class="searchTerm" placeholder="What are you looking for?">
+  <div class="wrap">
+    <div class="search">
+      <input id="input" type="text" class="searchTerm" placeholder="What are you looking for?">
 
-    <button id= "botao" type="submit" class="searchButton"> 🔎
-      <i class="fa fa-search"></i>
-    </button>
+      <button id="botao" type="submit" class="searchButton"> 🔎
+        <i class="fa fa-search"></i>
+      </button>
+    </div>
   </div>
-</div>
 
-<script>
-  document.getElementById("botao").addEventListener("click", (e) => {
-    console.log("Searching...");
-    let q = document.getElementById("input").value;
-      $.ajax({
-        url:"https://images-api.nasa.gov/search?q="+q,
-        success:function(whatyougot){
-
-          for (var i = 0; i < 10; i++){
+  <script>
+    document.getElementById("botao").addEventListener("click", (e) => {
+      console.log("Searching...");
+      let q = document.getElementById("input").value;
+      fetch("http://localhost:8080/?q=" + q)
+        .then(function (response) {
+          return response.json()
+        }).then(function (whatyougot) {
+          console.log(whatyougot);
+          for (var i = 0; i < whatyougot.length; i++) {
             let img = document.createElement("img");
-            img.src = whatyougot.collection.items[i].links[0].href;
+            img.src = "data:image/png;base64, " + whatyougot[i];
             document.getElementById("img").appendChild(img);
 
           }
-        }
-      });
+        })
+    });
 
-    <!-- Send value to a server -->
-  });
-
-</script>
- <div class="space" id="img"></div>
+  </script>
+  <div class="space" id="img"></div>
 
 </body>
+
 </html>

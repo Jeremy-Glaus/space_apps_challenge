@@ -1,12 +1,10 @@
 # Python 3 server example
 from asyncio.windows_events import NULL
-from cgitb import text
-from distutils.command.build import build
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from pydoc import resolve
-from turtle import color, textinput
 import requests
+import json
 import base64
+import secret
 
 import cv2
 import numpy as np
@@ -19,14 +17,11 @@ serverPort = 8080
 resultImages = []
 
 API_URL = "https://api-inference.huggingface.co/models/vblagoje/bert-english-uncased-finetuned-pos"
-headers = {"Authorization": "Bearer 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"}
+headers = {"Authorization": "Bearer " + secret.nasa_api_secret}
 
 def query(payload):
 	response = requests.post(API_URL, headers=headers, json=payload)
 	return response.json()
-
-def getNasaImage(imageUrl):
-    print("get")
 
 def findObjects(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -74,6 +69,7 @@ def getNasaImages(searchFor, inputText):
         #Save original image for debugging
         cv2.imwrite('original_image.png', img)
 
+        #TODO Use data from natural language procressing to determine color
         print('PATH: ' + inputText)
         # Determine color
         colorimg = NULL
@@ -92,6 +88,12 @@ def getNasaImages(searchFor, inputText):
         elif ('purple' in inputText):
             print("purple")
             colorimg = np.full(img.shape, (150,0,255), np.uint8)
+        elif ('white' in inputText):
+            print("white")
+            colorimg = np.full(img.shape, (0,0,0), np.uint8)
+        elif ('black' in inputText):
+            print("black")
+            colorimg = np.full(img.shape, (255,255,255), np.uint8)
         else:
             print("white")
             colorimg = np.full(img.shape, (0,0,0), np.uint8)
@@ -103,8 +105,13 @@ def getNasaImages(searchFor, inputText):
         #Save processed image for debugging
         img = cv2.imwrite('processed_image.png', fused_img)
 
+        #resultImages.append(base64.b64encode(img.to_bytes(os.path.getsize("processed_image.png"), byteorder="little"))) 
+        with open("processed_image.png", "rb") as img_file:
+            b64_string = base64.b64encode(img_file.read()).decode("utf-8")
+            resultImages.append(b64_string)
+
         #Limit numbers of images
-        if(counter == 0):
+        if(counter == 9):
             break;
         counter = counter + 1
 
@@ -114,8 +121,8 @@ class MyServer(BaseHTTPRequestHandler):
         #Do nothing if the favicon is request
         print(self.path)
         if('favicon' not in self.path):
+            resultImages.clear()
             text = self.path.split("?")[1]
-            inputText = text
             #Send query to classification api
             print("Query: " + text)
             output = query({
@@ -129,10 +136,11 @@ class MyServer(BaseHTTPRequestHandler):
                     print(entity.get("entity_group"))
                     getNasaImages(entity.get("word"), text)
 
-        #Ending headers
         self.send_response(200)
-        self.send_header("Content-type", "text/html")
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header("Content-type", "application/json")
         self.end_headers()
+        self.wfile.write(bytes(json.dumps(resultImages), "utf-8"))
 
 #random stuff
 if __name__ == "__main__":        
